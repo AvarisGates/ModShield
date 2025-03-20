@@ -2,13 +2,16 @@ package com.avaris.modshield;
 
 import com.avaris.modshield.network.ClientModsC2S;
 import com.mojang.authlib.GameProfile;
+import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.packet.s2c.common.DisconnectS2CPacket;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.dedicated.MinecraftDedicatedServer;
 import net.minecraft.server.network.ConnectedClientData;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -22,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.*;
+
+import static net.minecraft.server.command.CommandManager.literal;
 
 public class ModShield implements ModInitializer {
 
@@ -70,7 +75,9 @@ public class ModShield implements ModInitializer {
         // Check this way to avoid a NullPointerException
         if(Boolean.FALSE.equals(validateMods(packet,playerUuid))){
             if(context.server() instanceof MinecraftDedicatedServer){
-                context.networkHandler().disconnect(Text.literal(denialReasons.get(playerUuid)));
+                if(context.networkHandler().isConnectionOpen()){
+                    context.networkHandler().disconnect(Text.literal(denialReasons.get(playerUuid)));
+                }
             }
         }else{
             allowedPlayers.add(playerUuid);
@@ -144,7 +151,7 @@ public class ModShield implements ModInitializer {
         if(!allowedPlayers.contains(player.getUuid())){
             player.server.getPlayerManager().remove(player);
             connection.send(new DisconnectS2CPacket(NO_MOD_SHIELD_MESSAGE));
-            connection.disconnect(NO_MOD_SHIELD_MESSAGE);
+            //connection.disconnect(NO_MOD_SHIELD_MESSAGE);
         }
         allowedPlayers.remove(player.getUuid());
     }
@@ -153,6 +160,20 @@ public class ModShield implements ModInitializer {
         allowedModsCache.clear();
         denialReasons.clear();
         allowedPlayers.clear();
+    }
+
+    private static int commandReload(CommandContext<ServerCommandSource> context) {
+        try {
+            ShieldConfig.load();
+            context.getSource().sendMessage(Text.literal(ModShield.MOD_ID_CAP)
+                    .formatted(Formatting.GOLD)
+                    .append(" reloaded with disallowed: "+ShieldConfig.getDisallowedMods().size()+", allowed: "+ShieldConfig.getAllowedMods().size()));
+        } catch (IOException e) {
+            e.printStackTrace();
+            context.getSource().sendError(Text.literal(e.getMessage()));
+            return 1;
+        }
+        return 0;
     }
 
     @Override
@@ -168,5 +189,11 @@ public class ModShield implements ModInitializer {
                 e.printStackTrace();
             }
         }
+
+
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+                literal("mod-shield-reload").requires(source -> source.hasPermissionLevel(4))
+                        .executes((ModShield::commandReload)))
+        );
     }
 }
