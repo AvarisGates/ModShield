@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "modshield",
+  "version": "${version}",
+  "name": "ModShield",
+  "description": "Verify that client mods are allowed on the server",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/modshield/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "com.avaris.modshield.client.ModShieldClient"
+    ],
+    "main": [
+      "com.avaris.modshield.ModShield"
+    ]
+  },
+  "mixins": [
+    "modshield.mixins.json",
+    {
+      "config": "modshield.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
