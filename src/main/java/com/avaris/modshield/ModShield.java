@@ -77,7 +77,7 @@ public class ModShield implements ModInitializer {
             }
             if(!ModShieldApi.Events.SENT_INVALID_PACKET_EVENT.invoker().onSentInvalidPacket(playerUuid)){
                 denialReasons.put(playerUuid,"Invalid mods hash.");
-                ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(denialReasons.get(playerUuid));
+                ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(playerUuid,denialReasons.get(playerUuid));
                 context.networkHandler().disconnect(Text.literal(denialReasons.get(playerUuid)));
             }
         }
@@ -93,7 +93,7 @@ public class ModShield implements ModInitializer {
         if(Boolean.FALSE.equals(validateMods(packet,playerUuid))){
             if(context.server() instanceof MinecraftDedicatedServer){
                 if(context.networkHandler().isConnectionOpen()){
-                    ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(denialReasons.get(playerUuid));
+                    ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(playerUuid,denialReasons.get(playerUuid));
                     context.networkHandler().disconnect(Text.literal(denialReasons.get(playerUuid)));
                 }
             }
@@ -147,7 +147,7 @@ public class ModShield implements ModInitializer {
             // Return null for success
             return null;
         }
-        ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(denialReason);
+        ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(profile.getId(),denialReason);
         return Text.literal(denialReason);
     }
 
@@ -157,13 +157,13 @@ public class ModShield implements ModInitializer {
         }
         ModShield.getLogger().info("ModShield.onPlayerConnect");
         if(denialReasons.get(player.getUuid()) != null){
-            ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(denialReasons.get(player.getUuid()));
+            ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(player.getUuid(),denialReasons.get(player.getUuid()));
             connection.disconnect(Text.of(denialReasons.get(player.getUuid())));
         }
         if(!allowedPlayers.contains(player.getUuid())){
             player.server.getPlayerManager().remove(player);
             connection.send(new DisconnectS2CPacket(NO_MOD_SHIELD_MESSAGE));
-            ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(NO_MOD_SHIELD_MESSAGE.getLiteralString());
+            ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(player.getUuid(),NO_MOD_SHIELD_MESSAGE.getLiteralString());
             //connection.disconnect(NO_MOD_SHIELD_MESSAGE);
         }
         allowedPlayers.remove(player.getUuid());
