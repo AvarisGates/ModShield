@@ -1,5 +1,6 @@
 package com.avaris.modshield;
 
+import com.avaris.modshield.api.v1.impl.ModShieldApi;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.BufferedReader;
@@ -22,11 +23,11 @@ public class ShieldConfig {
             
             If you want to disallow mods put them int the 'disallowed = ' option, separated by commas.""";
 
-    public static Collection<String> getDisallowedMods() {
+    public static synchronized Collection<String> getDisallowedMods() {
         return disallowedMods;
     }
 
-    public static Collection<String> getAllowedMods() {
+    public static synchronized Collection<String> getAllowedMods() {
         return allowedMods;
     }
 
@@ -41,7 +42,7 @@ public class ShieldConfig {
         ).distinct().sorted().toList();
     }
 
-    private static Path prepareConfigFile() throws IOException {
+    private static synchronized Path prepareConfigFile() throws IOException {
         Path configPath = FabricLoader.getInstance().getConfigDir().resolve(ModShield.MOD_ID+".properties");
         if(Files.exists(configPath)){
            return configPath;
@@ -60,7 +61,7 @@ public class ShieldConfig {
         return configPath;
     }
 
-    public static void load() throws IOException {
+    public static synchronized void load() throws IOException {
         ModShield.clearCache();
 
         Path configPath = prepareConfigFile();
@@ -87,17 +88,6 @@ public class ShieldConfig {
             );
         }
 
-        ModShield.getLogger().info("Loaded ModShield config, disallowed mods: {}, allowed mods: {}",getDisallowedMods().size(),getAllowedMods().size());
-        if(FabricLoader.getInstance().isDevelopmentEnvironment()){
-            ModShield.getLogger().info("Disallowed Mods:");
-            for(var i : getDisallowedMods()){
-                ModShield.getLogger().info("\t'{}'",i);
-            }
-
-            ModShield.getLogger().info("Allowed Mods:");
-            for(var i : getAllowedMods()){
-                ModShield.getLogger().info("\t'{}'",i);
-            }
-        }
+        ModShieldApi.Events.CONFIG_RELOADED_EVENT.invoker().onConfigReloaded();
     }
 }

@@ -1,5 +1,6 @@
 package com.avaris.modshield;
 
+import com.avaris.modshield.api.v1.impl.ModShieldApi;
 import com.avaris.modshield.network.ClientModsC2S;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.context.CommandContext;
@@ -28,6 +29,10 @@ import java.util.*;
 
 import static net.minecraft.server.command.CommandManager.literal;
 
+/**
+ * Common entrypoint to ModShield.
+ * @see ModShieldApi
+ */
 public class ModShield implements ModInitializer {
 
     public static final String MOD_ID_CAP = "ModShield";
@@ -57,15 +62,27 @@ public class ModShield implements ModInitializer {
     private static final HashMap<UUID,String> denialReasons = new HashMap<>();
     private static final HashSet<UUID> allowedPlayers = new HashSet<>();
 
-    private static void receiveClientModsC2S(ClientModsC2S packet, ServerConfigurationNetworking.Context context) {
+    public static synchronized boolean isPlayerAllowed(UUID playerUuid){
+        return allowedPlayers.contains(playerUuid);
+    }
+
+    private static synchronized void receiveClientModsC2S(ClientModsC2S packet, ServerConfigurationNetworking.Context context) {
         UUID playerUuid = context.networkHandler().getDebugProfile().getId();
 
         allowedPlayers.remove(playerUuid);
 
-        if(FabricLoader.getInstance().isDevelopmentEnvironment()){
-            if(!packet.valid()){
+        if(!packet.valid()){
+            if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
                 ModShield.getLogger().info("{} sent invalid packet!", playerUuid);
             }
+            if(!ModShieldApi.Events.SENT_INVALID_PACKET_EVENT.invoker().onSentInvalidPacket(playerUuid)){
+                denialReasons.put(playerUuid,"Invalid mods hash.");
+                ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(denialReasons.get(playerUuid));
+                context.networkHandler().disconnect(Text.literal(denialReasons.get(playerUuid)));
+            }
+        }
+
+        if(FabricLoader.getInstance().isDevelopmentEnvironment()){
             ModShield.getLogger().info("{} sent mods:", playerUuid);
             for(var i : packet.mods().entrySet()){
                 ModShield.getLogger().info("{}",i);
@@ -76,6 +93,7 @@ public class ModShield implements ModInitializer {
         if(Boolean.FALSE.equals(validateMods(packet,playerUuid))){
             if(context.server() instanceof MinecraftDedicatedServer){
                 if(context.networkHandler().isConnectionOpen()){
+                    ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(denialReasons.get(playerUuid));
                     context.networkHandler().disconnect(Text.literal(denialReasons.get(playerUuid)));
                 }
             }
@@ -84,7 +102,7 @@ public class ModShield implements ModInitializer {
         }
     }
 
-    private static boolean validateMods(ClientModsC2S packet,UUID playerUuid) {
+    private static synchronized boolean validateMods(ClientModsC2S packet,UUID playerUuid) {
         Boolean ret = allowedModsCache.get(packet.hash());
         if(ret != null){
             return ret;
@@ -120,49 +138,44 @@ public class ModShield implements ModInitializer {
         return ret;
     }
 
-    public static @Nullable Text canJoin(SocketAddress address, GameProfile profile) {
+    public static synchronized @Nullable Text canJoin(SocketAddress address, GameProfile profile) {
         if(FabricLoader.getInstance().isDevelopmentEnvironment()){
             ModShield.getLogger().info("ModShield.canJoin");
         }
         String denialReason = denialReasons.get(profile.getId());
         if(denialReason == null||denialReason.isBlank()){
-            //if(address.toString().contains("192.168.")||
-            //   address.toString().contains("local:")||address.toString().contains("127.0.0.1:")){
-            //    return null;
-            //}
-
-            //if(!allowedPlayers.contains(profile.getId())){
-            //    return NO_MOD_SHIELD_MESSAGE;
-            //}
             // Return null for success
             return null;
         }
+        ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(denialReason);
         return Text.literal(denialReason);
     }
 
-    public static void onPlayerConnect(ClientConnection connection, ServerPlayerEntity player, ConnectedClientData clientData) {
+    public static synchronized void onPlayerConnect(ClientConnection connection, ServerPlayerEntity player, ConnectedClientData clientData) {
         if(!connection.isOpen()){
             return;
         }
         ModShield.getLogger().info("ModShield.onPlayerConnect");
         if(denialReasons.get(player.getUuid()) != null){
+            ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(denialReasons.get(player.getUuid()));
             connection.disconnect(Text.of(denialReasons.get(player.getUuid())));
         }
         if(!allowedPlayers.contains(player.getUuid())){
             player.server.getPlayerManager().remove(player);
             connection.send(new DisconnectS2CPacket(NO_MOD_SHIELD_MESSAGE));
+            ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(NO_MOD_SHIELD_MESSAGE.getLiteralString());
             //connection.disconnect(NO_MOD_SHIELD_MESSAGE);
         }
         allowedPlayers.remove(player.getUuid());
     }
 
-    public static void clearCache(){
+    public static synchronized void clearCache(){
         allowedModsCache.clear();
         denialReasons.clear();
         allowedPlayers.clear();
     }
 
-    private static int commandReload(CommandContext<ServerCommandSource> context) {
+    private static synchronized int commandReload(CommandContext<ServerCommandSource> context) {
         try {
             ShieldConfig.load();
             context.getSource().sendMessage(Text.literal(ModShield.MOD_ID_CAP)
@@ -178,6 +191,8 @@ public class ModShield implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        //ServiceLoader<IAddServerMods> iAddServerMods = ServiceLoader.load(IAddServerMods.class);
+        //iAddServerMods.forEach(x -> x.test());
         PayloadTypeRegistry.configurationC2S().register(ClientModsC2S.ID,ClientModsC2S.CODEC);
         ServerConfigurationNetworking.registerGlobalReceiver(ClientModsC2S.ID, ModShield::receiveClientModsC2S);
         if(FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER||
@@ -195,5 +210,20 @@ public class ModShield implements ModInitializer {
                 literal("mod-shield-reload").requires(source -> source.hasPermissionLevel(4))
                         .executes((ModShield::commandReload)))
         );
+
+        ModShieldApi.Events.CONFIG_RELOADED_EVENT.register(() -> {
+            ModShield.getLogger().info("Loaded ModShield config, disallowed mods: {}, allowed mods: {}",ShieldConfig.getDisallowedMods().size(),ShieldConfig.getAllowedMods().size());
+            if(FabricLoader.getInstance().isDevelopmentEnvironment()){
+                ModShield.getLogger().info("Disallowed Mods:");
+                for(var i : ShieldConfig.getDisallowedMods()){
+                    ModShield.getLogger().info("\t'{}'",i);
+                }
+
+                ModShield.getLogger().info("Allowed Mods:");
+                for(var i : ShieldConfig.getAllowedMods()){
+                    ModShield.getLogger().info("\t'{}'",i);
+                }
+            }
+        });
     }
 }
