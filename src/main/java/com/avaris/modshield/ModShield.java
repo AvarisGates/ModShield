@@ -61,9 +61,14 @@ public class ModShield implements ModInitializer {
     private static final HashMap<Integer,Boolean> allowedModsCache = new HashMap<>();
     private static final HashMap<UUID,String> denialReasons = new HashMap<>();
     private static final HashSet<UUID> allowedPlayers = new HashSet<>();
+    private static final HashMap<UUID,Map<String,String>> playerMods = new HashMap<>();
 
     public static synchronized boolean isPlayerAllowed(UUID playerUuid){
         return allowedPlayers.contains(playerUuid);
+    }
+
+    public static synchronized Map<String,String> getPlayerMods(UUID playerUuid){
+        return playerMods.get(playerUuid);
     }
 
     private static synchronized void receiveClientModsC2S(ClientModsC2S packet, ServerConfigurationNetworking.Context context) {
@@ -89,6 +94,10 @@ public class ModShield implements ModInitializer {
             }
         }
 
+        if(ShieldConfig.shouldSavePlayerMods()){
+            playerMods.put(playerUuid,packet.mods());
+        }
+
         // Check this way to avoid a NullPointerException
         if(Boolean.FALSE.equals(validateMods(packet,playerUuid))){
             if(context.server() instanceof MinecraftDedicatedServer){
@@ -99,6 +108,7 @@ public class ModShield implements ModInitializer {
             }
         }else{
             allowedPlayers.add(playerUuid);
+            ModShieldApi.Events.PLAYER_ALLOWED_EVENT.invoker().onPlayerAllowed(playerUuid,packet.mods());
         }
     }
 
@@ -173,6 +183,7 @@ public class ModShield implements ModInitializer {
         allowedModsCache.clear();
         denialReasons.clear();
         allowedPlayers.clear();
+        playerMods.clear();
     }
 
     private static synchronized int commandReload(CommandContext<ServerCommandSource> context) {

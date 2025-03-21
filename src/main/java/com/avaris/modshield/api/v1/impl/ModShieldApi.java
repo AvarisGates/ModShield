@@ -6,8 +6,10 @@ import com.avaris.modshield.network.ClientModsC2S;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -41,6 +43,28 @@ public class ModShieldApi {
         return ModShield.isPlayerAllowed(playerUuid);
     }
 
+    /**
+     * Retrieves player mod saving status.<br>
+     * To enable this option set 'savePlayerMods' in the config file to 'true'.
+     * @return whether player mods are saved and can be retrieved
+     * @see ShieldConfig
+     */
+    public static boolean arePlayerModsSaved(){
+        return ShieldConfig.shouldSavePlayerMods();
+    }
+
+    /**
+     * Retrieves player mods sent by the client, only available when player mods are saved.<br>
+     * To check if player mods are saved use{@link ModShieldApi#arePlayerModsSaved()}
+     * @return A Map of mod id to mod version
+     */
+    public static @Nullable Map<String,String> getPlayerMods(UUID playerUuid){
+        if(!arePlayerModsSaved()){
+            return null;
+        }
+        return ModShield.getPlayerMods(playerUuid);
+    }
+
     public static class Events{
         /**
          * Called when the config is reloaded.
@@ -51,6 +75,17 @@ public class ModShieldApi {
         public static final Event<ConfigReloaded> CONFIG_RELOADED_EVENT = EventFactory.createArrayBacked(ConfigReloaded.class,(callbacks) -> () -> {
             for(var callback : callbacks){
                 callback.onConfigReloaded();
+            }
+        });
+
+        /**
+         * Called when a player is cleared to connect by ModShield.
+         * playerUuid - the disconnected player's UUID
+         * modMap - map from mod id to version
+         */
+        public static final Event<PlayerAllowed> PLAYER_ALLOWED_EVENT = EventFactory.createArrayBacked(PlayerAllowed.class,(callbacks) -> (playerUuid, modMap) -> {
+            for(var callback : callbacks){
+                callback.onPlayerAllowed(playerUuid, modMap);
             }
         });
 
@@ -83,6 +118,11 @@ public class ModShieldApi {
         @FunctionalInterface
         public interface ConfigReloaded{
             void onConfigReloaded();
+        }
+
+        @FunctionalInterface
+        public interface PlayerAllowed{
+            void onPlayerAllowed(UUID playerUuid,Map<String,String> modMap);
         }
 
         @FunctionalInterface

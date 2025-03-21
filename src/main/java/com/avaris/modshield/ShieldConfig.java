@@ -14,14 +14,21 @@ import java.util.stream.Stream;
 public class ShieldConfig {
     private static final ArrayList<String> disallowedMods = new ArrayList<>();
     private static final ArrayList<String> allowedMods = new ArrayList<>();
+    private static boolean savePlayerMods = false;
+
     private static final String DISALLOWED_MODS_KEY = "disallowed";
     private static final String ALLOWED_MODS_KEY = "allowed";
+    private static final String SAVE_PLAYER_MODS_KEY = "savePlayerMods";
+
+
     private static final String CONFIG_COMMENTS = """
             This is a template ModShield config file.
             If you want to allow only certain mods add them in the 'allowed = 'option, separated by commas.
             This way only mods in that option can be used by the client.
             
-            If you want to disallow mods put them int the 'disallowed = ' option, separated by commas.""";
+            If you want to disallow mods put them int the 'disallowed = ' option, separated by commas.
+            
+            savePlayerMods - when set to 'true' ModShield will save mods used by players, that can be accessed through the API""";
 
     public static synchronized Collection<String> getDisallowedMods() {
         return disallowedMods;
@@ -29,6 +36,10 @@ public class ShieldConfig {
 
     public static synchronized Collection<String> getAllowedMods() {
         return allowedMods;
+    }
+
+    public static boolean shouldSavePlayerMods(){
+        return savePlayerMods;
     }
 
     private static List<String> validateInputList(List<String> input){
@@ -54,6 +65,7 @@ public class ShieldConfig {
         Properties properties = new Properties();
         properties.put(DISALLOWED_MODS_KEY,"");
         properties.put(ALLOWED_MODS_KEY,"");
+        properties.put(SAVE_PLAYER_MODS_KEY,"false");
 
         properties.store(writer,CONFIG_COMMENTS);
         writer.close();
@@ -86,6 +98,12 @@ public class ShieldConfig {
             allowedMods.addAll(
                     validateInputList(List.of(allowedModsString.split(",")))
             );
+        }
+
+        String savePlayerModsString = properties.getProperty(SAVE_PLAYER_MODS_KEY);
+
+        if (allowedModsString != null){
+            savePlayerMods = Boolean.parseBoolean(savePlayerModsString);
         }
 
         ModShieldApi.Events.CONFIG_RELOADED_EVENT.invoker().onConfigReloaded();
