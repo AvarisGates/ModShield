@@ -8,6 +8,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -23,16 +24,22 @@ public class ShieldConfig {
     private static final String ONLY_SERVER_MODS_KEY = "onlyAllowServerMods";
     private static final String ALWAYS_ALLOWED_PLAYERS_KEY = "alwaysAllowedPlayers";
 
-    private static final String CONFIG_COMMENTS = """
+    private static final String CONFIG_COMMENTS = MessageFormat.format("""
             This is a template ModShield config file.
-            If you want to allow only certain mods add them in the 'allowed = 'option, separated by commas.
+            If you want to allow only certain mods add them in the {0} option, separated by commas.
             This way only mods in that option can be used by the client.
             
-            If you want to disallow mods put them int the 'disallowed = ' option, separated by commas.
+            If you want to disallow mods put them in the {1} option, separated by commas.
             
-            savePlayerMods - when set to 'true' ModShield will save mods used by players, that can be accessed through the API.
-            onlyAllowServerMods - when set to 'true' only mods found on the server will be allowed on the client.
-            alwaysAllowedPlayer - list of players that can run every mod, separated by commas, UUIDs or names""";
+            {2} - when set to 'true' ModShield will save mods used by players, that can be accessed through the API.
+            {3} - when set to 'true' only mods found on the server will be allowed on the client.
+            {4} - list of players that can run every mod, separated by commas, UUIDs or names""",
+            DISALLOWED_MODS_KEY,
+            ALLOWED_MODS_KEY,
+            SAVE_PLAYER_MODS_KEY,
+            ONLY_SERVER_MODS_KEY,
+            ALWAYS_ALLOWED_PLAYERS_KEY
+    );
 
     public static synchronized Collection<String> getDisallowedMods() {
         return disallowedMods;
