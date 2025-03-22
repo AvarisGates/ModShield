@@ -14,13 +14,14 @@ import java.util.stream.Stream;
 public class ShieldConfig {
     private static final ArrayList<String> disallowedMods = new ArrayList<>();
     private static final ArrayList<String> allowedMods = new ArrayList<>();
+    private static final ArrayList<String> alwaysAllowedPlayers = new ArrayList<>();
     private static boolean savePlayerMods = false;
 
     private static final String DISALLOWED_MODS_KEY = "disallowed";
     private static final String ALLOWED_MODS_KEY = "allowed";
     private static final String SAVE_PLAYER_MODS_KEY = "savePlayerMods";
     private static final String ONLY_SERVER_MODS_KEY = "onlyAllowServerMods";
-
+    private static final String ALWAYS_ALLOWED_PLAYERS_KEY = "alwaysAllowedPlayers";
 
     private static final String CONFIG_COMMENTS = """
             This is a template ModShield config file.
@@ -30,7 +31,8 @@ public class ShieldConfig {
             If you want to disallow mods put them int the 'disallowed = ' option, separated by commas.
             
             savePlayerMods - when set to 'true' ModShield will save mods used by players, that can be accessed through the API.
-            onlyAllowServerMods - when set to 'true' only mods found on the server will be allowed on the client.""";
+            onlyAllowServerMods - when set to 'true' only mods found on the server will be allowed on the client.
+            alwaysAllowedPlayer - list of players that can run every mod, separated by commas, UUIDs or names""";
 
     public static synchronized Collection<String> getDisallowedMods() {
         return disallowedMods;
@@ -124,6 +126,18 @@ public class ShieldConfig {
             savePlayerMods = Boolean.parseBoolean(savePlayerModsString);
         }
 
+        String alwaysAllowedPlayersString = properties.getProperty(ALWAYS_ALLOWED_PLAYERS_KEY);
+
+        if (alwaysAllowedPlayersString != null){
+            alwaysAllowedPlayers.addAll(
+                    validateInputList(List.of(alwaysAllowedPlayersString.split(",")))
+            );
+        }
+
         ModShieldApi.Events.CONFIG_RELOADED_EVENT.invoker().onConfigReloaded();
+    }
+
+    public static boolean isAlwaysAllowed(UUID playerUuid, String name) {
+        return alwaysAllowedPlayers.contains(playerUuid.toString()) ||alwaysAllowedPlayers.contains(name);
     }
 }

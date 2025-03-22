@@ -73,6 +73,10 @@ public class ModShield implements ModInitializer {
 
     private static synchronized void receiveClientModsC2S(ClientModsC2S packet, ServerConfigurationNetworking.Context context) {
         UUID playerUuid = context.networkHandler().getDebugProfile().getId();
+        if(ShieldConfig.isAlwaysAllowed(playerUuid,context.networkHandler().getDebugProfile().getName())){
+            allowedPlayers.add(playerUuid);
+            ModShieldApi.Events.PLAYER_ALLOWED_EVENT.invoker().onPlayerAllowed(playerUuid,packet.mods());
+        }
 
         allowedPlayers.remove(playerUuid);
 
@@ -152,6 +156,9 @@ public class ModShield implements ModInitializer {
         if(FabricLoader.getInstance().isDevelopmentEnvironment()){
             ModShield.getLogger().info("ModShield.canJoin");
         }
+        if(ShieldConfig.isAlwaysAllowed(profile.getId(),profile.getName())){
+            return null;
+        }
         String denialReason = denialReasons.get(profile.getId());
         if(denialReason == null||denialReason.isBlank()){
             // Return null for success
@@ -166,6 +173,9 @@ public class ModShield implements ModInitializer {
             return;
         }
         ModShield.getLogger().info("ModShield.onPlayerConnect");
+        if(ShieldConfig.isAlwaysAllowed(player.getUuid(),player.getNameForScoreboard())){
+            return;
+        }
         if(denialReasons.get(player.getUuid()) != null){
             ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(player.getUuid(),denialReasons.get(player.getUuid()));
             connection.disconnect(Text.of(denialReasons.get(player.getUuid())));
