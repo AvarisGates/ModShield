@@ -19,6 +19,7 @@ public class ShieldConfig {
     private static final String DISALLOWED_MODS_KEY = "disallowed";
     private static final String ALLOWED_MODS_KEY = "allowed";
     private static final String SAVE_PLAYER_MODS_KEY = "savePlayerMods";
+    private static final String ONLY_SERVER_MODS_KEY = "onlyAllowServerMods";
 
 
     private static final String CONFIG_COMMENTS = """
@@ -28,7 +29,8 @@ public class ShieldConfig {
             
             If you want to disallow mods put them int the 'disallowed = ' option, separated by commas.
             
-            savePlayerMods - when set to 'true' ModShield will save mods used by players, that can be accessed through the API""";
+            savePlayerMods - when set to 'true' ModShield will save mods used by players, that can be accessed through the API.
+            onlyAllowServerMods - when set to 'true' only mods found on the server will be allowed on the client.""";
 
     public static synchronized Collection<String> getDisallowedMods() {
         return disallowedMods;
@@ -66,6 +68,7 @@ public class ShieldConfig {
         properties.put(DISALLOWED_MODS_KEY,"");
         properties.put(ALLOWED_MODS_KEY,"");
         properties.put(SAVE_PLAYER_MODS_KEY,"false");
+        properties.put(ONLY_SERVER_MODS_KEY,"false");
 
         properties.store(writer,CONFIG_COMMENTS);
         writer.close();
@@ -82,27 +85,42 @@ public class ShieldConfig {
         properties.load(reader);
         reader.close();
 
-        String disallowedModsString = properties.getProperty(DISALLOWED_MODS_KEY);
         disallowedMods.clear();
+        allowedMods.clear();
+        boolean onlyServerMods = false;
 
-        if(disallowedModsString != null){
-            disallowedMods.addAll(
-                    validateInputList(List.of(disallowedModsString.split(",")))
-            );
+        String onlyServerModsString = properties.getProperty(ONLY_SERVER_MODS_KEY);
+
+        if (onlyServerModsString != null){
+            onlyServerMods = Boolean.parseBoolean(onlyServerModsString);
         }
 
-        String allowedModsString = properties.getProperty(ALLOWED_MODS_KEY);
-        allowedMods.clear();
+        if(onlyServerMods){
+            allowedMods.clear();
+            disallowedMods.clear();
+            FabricLoader.getInstance().getAllMods().forEach(mod -> allowedMods.add(mod.getMetadata().getId()));
+        }else{
+            String disallowedModsString = properties.getProperty(DISALLOWED_MODS_KEY);
 
-        if (allowedModsString != null){
-            allowedMods.addAll(
-                    validateInputList(List.of(allowedModsString.split(",")))
-            );
+            if(disallowedModsString != null){
+                disallowedMods.addAll(
+                        validateInputList(List.of(disallowedModsString.split(",")))
+                );
+            }
+
+            String allowedModsString = properties.getProperty(ALLOWED_MODS_KEY);
+
+            if (allowedModsString != null){
+                allowedMods.addAll(
+                        validateInputList(List.of(allowedModsString.split(",")))
+                );
+            }
+
         }
 
         String savePlayerModsString = properties.getProperty(SAVE_PLAYER_MODS_KEY);
 
-        if (allowedModsString != null){
+        if (savePlayerModsString != null){
             savePlayerMods = Boolean.parseBoolean(savePlayerModsString);
         }
 
