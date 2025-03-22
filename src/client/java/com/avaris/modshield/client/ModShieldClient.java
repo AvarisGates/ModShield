@@ -1,5 +1,6 @@
 package com.avaris.modshield.client;
 
+import com.avaris.modshield.ModShield;
 import com.avaris.modshield.network.ClientModsC2S;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationNetworking;
@@ -16,7 +17,7 @@ public class ModShieldClient implements ClientModInitializer {
         FabricLoader.getInstance().getAllMods().forEach(container -> {
                 modIds.putIfAbsent(container.getMetadata().getId(),container.getMetadata().getVersion().getFriendlyString());
         });
-        ClientConfigurationNetworking.send(new ClientModsC2S(modIds, modIds.hashCode(),true));
+        ClientConfigurationNetworking.send(new ClientModsC2S(ModShield.PROTOCOL_VERSION, modIds, modIds.hashCode(),true));
     }
 
     @Override

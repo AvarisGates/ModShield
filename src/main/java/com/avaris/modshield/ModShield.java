@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.packet.s2c.common.DisconnectS2CPacket;
 import net.minecraft.server.command.ServerCommandSource;
@@ -46,6 +47,8 @@ public class ModShield implements ModInitializer {
             .append(Text.literal(ModShield.MOD_ID_CAP)
                 .formatted(Formatting.GOLD))
             .append(" to join the server");
+    public static String MOD_VERSION;
+    public static final int PROTOCOL_VERSION = 2;
 
     public static Identifier id(String id) {
         return Identifier.of(MOD_ID,id);
@@ -76,6 +79,16 @@ public class ModShield implements ModInitializer {
         if(ShieldConfig.isAlwaysAllowed(playerUuid,context.networkHandler().getDebugProfile().getName())){
             allowedPlayers.add(playerUuid);
             ModShieldApi.Events.PLAYER_ALLOWED_EVENT.invoker().onPlayerAllowed(playerUuid,packet.mods());
+        }
+        if(packet.protocolVersion() != PROTOCOL_VERSION){
+            denialReasons.put(playerUuid,"Please update ModShield.");
+            if(context.server() instanceof MinecraftDedicatedServer){
+                if(context.networkHandler().isConnectionOpen()){
+                    ModShieldApi.Events.PLAYER_DISALLOWED_EVENT.invoker().onPlayerDisallow(playerUuid,denialReasons.get(playerUuid));
+                    context.networkHandler().disconnect(Text.literal(denialReasons.get(playerUuid)));
+                }
+            }
+            return;
         }
 
         allowedPlayers.remove(playerUuid);
@@ -226,6 +239,9 @@ public class ModShield implements ModInitializer {
             }
         }
 
+        Optional<ModContainer> container = FabricLoader.getInstance().getModContainer(MOD_ID);
+        container.ifPresent(mod ->
+                MOD_VERSION = mod.getMetadata().getVersion().getFriendlyString());
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
                 literal("mod-shield-reload").requires(source -> source.hasPermissionLevel(4))

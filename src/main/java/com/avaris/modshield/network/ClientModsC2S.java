@@ -10,7 +10,7 @@ import net.minecraft.util.Identifier;
 import java.util.HashMap;
 import java.util.Map;
 
-public record ClientModsC2S(Map<String,String> mods, int hash,boolean valid) implements CustomPayload {
+public record ClientModsC2S(int protocolVersion,Map<String,String> mods, int hash,boolean valid) implements CustomPayload {
     public static final PacketCodec<PacketByteBuf, ClientModsC2S> CODEC;
     public static final Identifier PACKET_ID;
     public static final CustomPayload.Id<ClientModsC2S> ID;
@@ -22,19 +22,21 @@ public record ClientModsC2S(Map<String,String> mods, int hash,boolean valid) imp
         CODEC = new PacketCodec<>() {
             @Override
             public ClientModsC2S decode(PacketByteBuf buf) {
+                int protocolVersion = buf.readVarInt();
                 HashMap<String,String> map = new HashMap<>();
-                int listSize = buf.readInt();
+                int listSize = buf.readVarInt();
                 for(int i = 0;i < listSize;i++) {
                     map.put(buf.readString(MAX_MOD_ID_LEN),
                             buf.readString(MAX_MOD_VERSION_LEN));
                 }
-                boolean valid = map.hashCode() == buf.readInt();
-                return new ClientModsC2S(map,map.hashCode(),valid);
+                boolean valid = map.hashCode() == buf.readVarInt();
+                return new ClientModsC2S(protocolVersion,map,map.hashCode(),valid);
             }
 
             @Override
             public void encode(PacketByteBuf buf, ClientModsC2S packet) {
-                buf.writeInt(packet.mods.size());
+                buf.writeVarInt(ModShield.PROTOCOL_VERSION);
+                buf.writeVarInt(packet.mods.size());
                 for(Map.Entry<String, String> entry : packet.mods.entrySet()){
                     int size = Math.min(MAX_MOD_ID_LEN, entry.getKey().length());
                     int size1 = Math.min(MAX_MOD_ID_LEN, entry.getValue().length());
@@ -42,7 +44,7 @@ public record ClientModsC2S(Map<String,String> mods, int hash,boolean valid) imp
                     buf.writeString(entry.getKey(),size);
                     buf.writeString(entry.getValue(),size1);
                 }
-                buf.writeInt(packet.mods.hashCode());
+                buf.writeVarInt(packet.mods.hashCode());
             }
         };
         PACKET_ID = ModShield.id("cast_player_class_ability");
