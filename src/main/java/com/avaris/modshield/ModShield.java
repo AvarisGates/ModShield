@@ -225,6 +225,7 @@ public class ModShield implements ModInitializer {
 
     @Override
     public void onInitialize() {
+
         //ServiceLoader<IAddServerMods> iAddServerMods = ServiceLoader.load(IAddServerMods.class);
         //iAddServerMods.forEach(x -> x.test());
         PayloadTypeRegistry.configurationC2S().register(ClientModsC2S.ID,ClientModsC2S.CODEC);
@@ -242,6 +243,12 @@ public class ModShield implements ModInitializer {
         Optional<ModContainer> container = FabricLoader.getInstance().getModContainer(MOD_ID);
         container.ifPresent(mod ->
                 MOD_VERSION = mod.getMetadata().getVersion().getFriendlyString());
+
+        String latestVersion = ModUpdater.getLatestVersion();
+        if(!Objects.equals(latestVersion, MOD_VERSION)){
+            getLogger().info("{} is out of date; Current version: {} latest version: {}\nPlease Download the latest version: {}",MOD_ID_CAP,MOD_VERSION,latestVersion,
+                    ModUpdater.getDownloadUrl(latestVersion));
+        }
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
                 literal("mod-shield-reload").requires(source -> source.hasPermissionLevel(4))
