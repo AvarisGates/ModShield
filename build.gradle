@@ -3,7 +3,16 @@ plugins {
     id 'maven-publish'
 }
 
-version = project.mod_version
+def getGitHash = { ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'rev-parse', '--short', 'HEAD'
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
+version = project.mod_version + "+" + getGitHash()
 group = project.maven_group
 
 base {
@@ -39,13 +48,13 @@ dependencies {
 }
 
 processResources {
-    inputs.property "version", project.version
+    inputs.property "version", version
     inputs.property "minecraft_version", project.minecraft_version
     inputs.property "loader_version", project.loader_version
     filteringCharset "UTF-8"
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version,
+        expand "version": version,
                 "minecraft_version": project.minecraft_version,
                 "loader_version": project.loader_version
     }
