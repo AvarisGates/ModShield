@@ -1,6 +1,6 @@
 package com.avaris.modshield;
 
-import com.avaris.modshield.api.v1.impl.EventApi;
+import com.avaris.modshield.api.v1.impl.ModShieldEventApi;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.BufferedReader;
@@ -159,6 +159,6 @@ public class ShieldConfig {
             autoUpdate = Boolean.parseBoolean(autoUpdateString);
         }
 
-        EventApi.CONFIG_RELOADED_EVENT.invoker().onConfigReloaded();
+        ModShieldEventApi.CONFIG_RELOADED_EVENT.invoker().onConfigReloaded();
     }
 }

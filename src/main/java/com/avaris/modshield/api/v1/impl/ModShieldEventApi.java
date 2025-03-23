@@ -10,7 +10,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import java.util.Map;
 import java.util.UUID;
 
-public class EventApi {
+public class ModShieldEventApi {
     /**
      * Called when the config is reloaded.
      * @see ModShieldApi#getDisallowedMods()

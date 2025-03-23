@@ -31,7 +31,7 @@ public class ModUpdater {
             return;
         }
         if(Objects.equals(latestVersion, ModShield.MOD_VERSION)){
-            ModShield.getLogger().info("{} v{} is up to date",ModShield.MOD_ID_CAP,ModShield.MOD_VERSION);
+            ModShield.getLogger().info("{} v{}:{} is up to date",ModShield.MOD_ID_CAP,ModShield.MOD_VERSION,ModShield.PROTOCOL_VERSION);
            return;
         }
         if(!ShieldConfig.shouldAutoUpdate()){
