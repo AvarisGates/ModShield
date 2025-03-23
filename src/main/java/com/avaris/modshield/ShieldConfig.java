@@ -17,12 +17,14 @@ public class ShieldConfig {
     private static final ArrayList<String> allowedMods = new ArrayList<>();
     private static final ArrayList<String> alwaysAllowedPlayers = new ArrayList<>();
     private static boolean savePlayerMods = false;
+    private static boolean autoUpdate = false;
 
     private static final String DISALLOWED_MODS_KEY = "disallowed";
     private static final String ALLOWED_MODS_KEY = "allowed";
     private static final String SAVE_PLAYER_MODS_KEY = "savePlayerMods";
     private static final String ONLY_SERVER_MODS_KEY = "onlyAllowServerMods";
     private static final String ALWAYS_ALLOWED_PLAYERS_KEY = "alwaysAllowedPlayers";
+    private static final String AUTOUPDATE_KEY = "autoUpdate";
 
     private static final String CONFIG_COMMENTS = MessageFormat.format("""
             This is a template ModShield config file.
@@ -33,12 +35,14 @@ public class ShieldConfig {
             
             {2} - when set to 'true' ModShield will save mods used by players, that can be accessed through the API.
             {3} - when set to 'true' only mods found on the server will be allowed on the client.
-            {4} - list of players that can run every mod, separated by commas, UUIDs or names""",
+            {4} - list of players that can run every mod, separated by commas, UUIDs or names.
+            {5} - when set to 'true' the mod will attempt to automatically update.""",
             DISALLOWED_MODS_KEY,
             ALLOWED_MODS_KEY,
             SAVE_PLAYER_MODS_KEY,
             ONLY_SERVER_MODS_KEY,
-            ALWAYS_ALLOWED_PLAYERS_KEY
+            ALWAYS_ALLOWED_PLAYERS_KEY,
+            AUTOUPDATE_KEY
     );
 
     public static synchronized Collection<String> getDisallowedMods() {
@@ -51,6 +55,14 @@ public class ShieldConfig {
 
     public static boolean shouldSavePlayerMods(){
         return savePlayerMods;
+    }
+
+    public static boolean isAlwaysAllowed(UUID playerUuid, String name) {
+        return alwaysAllowedPlayers.contains(playerUuid.toString())||alwaysAllowedPlayers.contains(name);
+    }
+
+    public static boolean shouldAutoUpdate() {
+        return autoUpdate;
     }
 
     private static List<String> validateInputList(List<String> input){
@@ -78,6 +90,7 @@ public class ShieldConfig {
         properties.put(ALLOWED_MODS_KEY,"");
         properties.put(SAVE_PLAYER_MODS_KEY,"false");
         properties.put(ONLY_SERVER_MODS_KEY,"false");
+        properties.put(AUTOUPDATE_KEY,"false");
 
         properties.store(writer,CONFIG_COMMENTS);
         writer.close();
@@ -140,11 +153,12 @@ public class ShieldConfig {
                     validateInputList(List.of(alwaysAllowedPlayersString.split(",")))
             );
         }
+        String autoUpdateString = properties.getProperty(AUTOUPDATE_KEY);
+
+        if (autoUpdateString != null){
+            autoUpdate = Boolean.parseBoolean(autoUpdateString);
+        }
 
         EventApi.CONFIG_RELOADED_EVENT.invoker().onConfigReloaded();
-    }
-
-    public static boolean isAlwaysAllowed(UUID playerUuid, String name) {
-        return alwaysAllowedPlayers.contains(playerUuid.toString()) ||alwaysAllowedPlayers.contains(name);
     }
 }

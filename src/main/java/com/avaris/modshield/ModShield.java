@@ -245,11 +245,7 @@ public class ModShield implements ModInitializer {
         container.ifPresent(mod ->
                 MOD_VERSION = mod.getMetadata().getVersion().getFriendlyString());
 
-        String latestVersion = ModUpdater.getLatestVersion();
-        if(!Objects.equals(latestVersion, MOD_VERSION)){
-            getLogger().info("{} is out of date; Current version: {} latest version: {}\nPlease Download the latest version: {}",MOD_ID_CAP,MOD_VERSION,latestVersion,
-                    ModUpdater.getDownloadUrl(latestVersion));
-        }
+        ModUpdater.downloadLatest();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
                 literal("mod-shield-reload").requires(source -> source.hasPermissionLevel(4))
