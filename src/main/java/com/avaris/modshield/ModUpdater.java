@@ -39,14 +39,14 @@ public class ModUpdater {
                     ModShield.MOD_ID_CAP,ModShield.MOD_VERSION,latestVersion,getDownloadUrl(latestVersion));
            return;
         }
-        ModShield.getLogger().info("Attempting autoupdate");
+        ModShield.getLogger().info("Attempting autoupdate to v{}",latestVersion);
 
         HttpClient client = HttpClient.newHttpClient();
         try{
             client.send(HttpRequest.newBuilder()
                     .GET().uri(URI.create(getDownloadUrl(latestVersion))).build(),
                     HttpResponse.BodyHandlers.ofFile(FabricLoader.getInstance().getGameDir().resolve("mods/"+ModShield.MOD_ID_CAP+"-"+latestVersion+".jar")));
-            ModShield.getLogger().info("Autoupdate successful, please restart the game delete mods/{}-{}.jar",ModShield.MOD_ID_CAP,latestVersion);
+            ModShield.getLogger().info("Autoupdate successful, please restart the game delete mods/{}-{}.jar",ModShield.MOD_ID_CAP,ModShield.MOD_VERSION);
         }catch (Exception e){
             ModShield.getLogger().info("Autoupdate failed with error:");
             e.printStackTrace();
