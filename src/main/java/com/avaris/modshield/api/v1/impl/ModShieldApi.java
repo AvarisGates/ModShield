@@ -10,7 +10,7 @@ import java.util.UUID;
 
 /**
  * Exposes functions and events that can be used by other mods.
- * It is not recommended to call functions from packages other than api.
+ * It is not recommended to call functions from packages other than API.
  * @see ModShieldEventApi
  */
 public class ModShieldApi {

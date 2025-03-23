@@ -15,16 +15,29 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Objects;
 
+/**
+ * This class retrieves the latest mod version from the server<br>
+ * @see ModUpdater#downloadLatest()
+ */
 public class ModUpdater {
 
     private static final String SERVER_URL = "https://vps-a25564b7.vps.ovh.net/";
     private static final String PATH = "com/avaris/"+ModShield.MOD_ID_CAP+"/";
     private static final String METADATA_FILE = "maven-metadata.xml";
 
-    public static String getDownloadUrl(String latestVersion){
-        return SERVER_URL + PATH + latestVersion+"/" + ModShield.MOD_ID_CAP+"-"+latestVersion+".jar";
+    /**
+     * Creates the download URL from the version string.
+     * @param version a String of the version
+     * @return a String of the download URL
+     */
+    public static String getDownloadUrl(String version){
+        return SERVER_URL + PATH + version +"/" + ModShield.MOD_ID_CAP+"-"+ version +".jar";
     }
 
+    /**
+     * Checks for the latest mod version. And attempts to download it if autoUpdate is enabled.<br>
+     * Otherwise logs that the mod is outdated it applicable.
+     */
     public static void downloadLatest(){
         String latestVersion = getLatestVersion();
         if(latestVersion == null){
@@ -55,6 +68,10 @@ public class ModUpdater {
 
     }
 
+    /**
+     * Retrieves the latest version of the mod from the server.
+     * @return a String of the latest version or null if an error occurred.
+     */
     public static String getLatestVersion(){
         try{
             final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

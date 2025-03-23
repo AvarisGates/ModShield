@@ -10,6 +10,10 @@ import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * A container for all the mod's events.<br>
+ * For other API methods see{@link ModShieldApi}
+ */
 public class ModShieldEventApi {
     /**
      * Called when the config is reloaded.

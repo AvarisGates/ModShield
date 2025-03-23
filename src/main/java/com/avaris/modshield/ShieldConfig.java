@@ -12,6 +12,10 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Stream;
 
+/**
+ * Handles the config and loading the config file.
+ * @see ModShield
+ */
 public class ShieldConfig {
     private static final ArrayList<String> disallowedMods = new ArrayList<>();
     private static final ArrayList<String> allowedMods = new ArrayList<>();
@@ -98,6 +102,12 @@ public class ShieldConfig {
         return configPath;
     }
 
+    /**
+     * Loads the config file. If it doesn't exist first it writes the template with default values to it.<br>
+     * Before loading clears the cache<br>
+     * The format is Java .properties
+     * @throws IOException when the file cannot be opened
+     */
     public static synchronized void load() throws IOException {
         ModShield.clearCache();
 
