@@ -1,6 +1,6 @@
 package com.avaris.modshield;
 
-import com.avaris.modshield.api.v1.impl.ModShieldApi;
+import com.avaris.modshield.api.v1.impl.EventApi;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.BufferedReader;
@@ -141,7 +141,7 @@ public class ShieldConfig {
             );
         }
 
-        ModShieldApi.Events.CONFIG_RELOADED_EVENT.invoker().onConfigReloaded();
+        EventApi.CONFIG_RELOADED_EVENT.invoker().onConfigReloaded();
     }
 
     public static boolean isAlwaysAllowed(UUID playerUuid, String name) {
