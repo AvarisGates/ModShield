@@ -3,6 +3,7 @@ package com.avaris.modshield;
 import com.avaris.modshield.api.v1.impl.ModShieldEventApi;
 import com.avaris.modshield.api.v1.impl.ModShieldApi;
 import com.avaris.modshield.network.ClientModsC2S;
+import com.avaris.towncrier.api.v1.impl.PlayerEvents;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.EnvType;
@@ -251,6 +252,9 @@ public class ModShield implements ModInitializer {
                 literal("mod-shield-reload").requires(source -> source.hasPermissionLevel(4))
                         .executes((ModShield::commandReload)))
         );
+
+        PlayerEvents.PLAYER_JOIN_EX_EVENT.register(ModShield::onPlayerConnect);
+        PlayerEvents.CAN_JOIN_EVENT.register(ModShield::canJoin);
 
         ModShieldEventApi.CONFIG_RELOADED_EVENT.register(() -> {
             ModShield.getLogger().info("Loaded ModShield config, disallowed mods: {}, allowed mods: {}",ShieldConfig.getDisallowedMods().size(),ShieldConfig.getAllowedMods().size());
