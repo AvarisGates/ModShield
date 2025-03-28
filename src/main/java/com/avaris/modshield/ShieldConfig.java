@@ -35,7 +35,7 @@ public class ShieldConfig {
             If you want to allow only certain mods add them in the {0} option, separated by commas.
             This way only mods in that option can be used by the client.
             
-            If you want to disallow mods put them in the {1} option, separated by commas.
+            If you want to allow only specified mods put them in the {1} option, separated by commas.
             
             {2} - when set to 'true' ModShield will save mods used by players, that can be accessed through the API.
             {3} - when set to 'true' only mods found on the server will be allowed on the client.

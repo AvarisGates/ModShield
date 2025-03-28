@@ -18,13 +18,15 @@ After you launch the mod for the first time a template version will be automatic
 #If you want to allow only certain mods add them in the disallowed option, separated by commas.
 #This way only mods in that option can be used by the client.
 #
-#If you want to disallow mods put them int the allowed option, separated by commas.
+#If you want to allow only specified mods put them in the allowed option, separated by commas.
 #
 #savePlayerMods - when set to true ModShield will save mods used by players, that can be accessed through the API.
 #onlyAllowServerMods - when set to true only mods found on the server will be allowed on the client.
-#alwaysAllowedPlayers - list of players that can run every mod, separated by commas, UUIDs or names
-#Sun Mar 23 00:29:03 CET 2025
+#alwaysAllowedPlayers - list of players that can run every mod, separated by commas, UUIDs or names.
+#autoUpdate - when set to true the mod will attempt to automatically update.
+#Fri Mar 28 23:03:05 CET 2025
 allowed=
+autoUpdate=false
 disallowed=
 onlyAllowServerMods=false
 savePlayerMods=false
